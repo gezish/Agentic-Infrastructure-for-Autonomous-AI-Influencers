@@ -11,6 +11,28 @@ CLAUDE.md
 task_tracker.md
 .Python
 build/
+# Build output
+target/
+
+# VCS
+.git/
+.github/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Node (if UI added later)
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
 develop-eggs/
 dist/
 downloads/
