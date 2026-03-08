@@ -109,7 +109,155 @@ erDiagram
 
 ## 4. API Specifications
 
-### 4.1 Task Schema
+### 4.1 AgentTask Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentTask",
+  "type": "object",
+  "description": "Atomic task unit published by Planner to Task Queue for Worker execution",
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the task"
+    },
+    "campaign_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Reference to parent campaign"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Assigned agent identifier"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["content_generation", "social_post", "commerce_txn", "analysis"],
+      "description": "Type of task to execute"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Task-specific parameters"
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Propagated correlation ID for observability"
+    },
+    "estimated_cost": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Estimated computational cost"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Task priority (1=lowest, 10=highest)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task creation timestamp"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task expiration timestamp (SLA deadline)"
+    }
+  },
+  "required": ["task_id", "campaign_id", "agent_id", "type", "payload", "correlation_id", "created_at", "expires_at"]
+}
+```
+
+### 4.2 WorkerResult Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WorkerResult",
+  "type": "object",
+  "description": "Result artifact submitted by Worker to Review Queue for Judge evaluation",
+  "properties": {
+    "execution_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique execution identifier"
+    },
+    "task_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Reference to executed task"
+    },
+    "worker_id": {
+      "type": "string",
+      "description": "Identifier of executing worker"
+    },
+    "result": {
+      "type": "object",
+      "description": "Execution output or error details"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failure", "pending"],
+      "description": "Execution outcome"
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Worker confidence in result (0.0-1.0)"
+    },
+    "sensitivity_flags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["political", "health_advice", "financial_advice", "legal_claim", "sensitive_content"]
+      },
+      "description": "Flags indicating sensitive topics requiring HITL review"
+    },
+    "actual_cost": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Actual computational cost incurred"
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Propagated correlation ID"
+    },
+    "audit_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        }
+      },
+      "description": "Audit trail of tool calls and decisions"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when result was submitted for review"
+    }
+  },
+  "required": ["execution_id", "task_id", "worker_id", "status", "correlation_id", "submitted_at"]
+}
+```
+
+### 4.3 Task Schema (Legacy Reference)
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -155,7 +303,7 @@ erDiagram
 }
 ```
 
-### 4.2 Execution Result Schema
+### 4.4 Execution Result Schema
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -215,7 +363,7 @@ erDiagram
 }
 ```
 
-### 4.3 Budget Schema
+### 4.5 Budget Schema
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
