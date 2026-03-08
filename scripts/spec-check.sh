@@ -64,24 +64,24 @@ done
 echo ""
 
 # ============================================================================
-# CHECK 2: Development Guidelines (.cursor/rules or CLAUDE.md)
+# CHECK 2: Development Guidelines (.cursor/rules/agent.mdc or CLAUDE.md)
 # ============================================================================
 echo "CHECK 2: Development guidelines..."
 
-CURSOR_RULES="$PROJECT_ROOT/.cursor/rules"
+CURSOR_RULES="$PROJECT_ROOT/.cursor/rules/agent.mdc"
 CLAUDE_MD="$PROJECT_ROOT/CLAUDE.md"
 GUIDELINES_FOUND=false
 
 if [ -f "$CURSOR_RULES" ]; then
     GUIDELINES_FILE="$CURSOR_RULES"
     GUIDELINES_FOUND=true
-    success "Found .cursor/rules"
+    success "Found .cursor/rules/agent.mdc"
 elif [ -f "$CLAUDE_MD" ]; then
     GUIDELINES_FILE="$CLAUDE_MD"
     GUIDELINES_FOUND=true
     success "Found CLAUDE.md"
 else
-    error "Missing .cursor/rules or CLAUDE.md"
+    error "Missing .cursor/rules/agent.mdc or CLAUDE.md"
 fi
 
 # Check for required guideline content
