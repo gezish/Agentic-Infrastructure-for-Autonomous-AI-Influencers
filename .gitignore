@@ -8,6 +8,7 @@ __pycache__/
 .*
 # Distribution / packaging
 CLAUDE.md
+task_tracker.md
 .Python
 build/
 develop-eggs/
