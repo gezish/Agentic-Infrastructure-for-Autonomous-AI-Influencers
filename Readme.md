@@ -1,4 +1,3 @@
-```md
 # Project Chimera — Agentic Infrastructure to Builds Autonomous Influencers Agent.  
 
 > **Role:** Forward Deployed Engineer (FDE)  
@@ -77,66 +76,151 @@ This repo addresses that by enforcing:
 - **HITL:** humans approve medium confidence or sensitive content
 - **CFO Judge (Beyond SRS):** financial safety gate for commerce actions
 
-### Diagram
+### Detailed Archtecture
 
 > The architecture diagram is defined in Mermaid inside:
 - `research/architecture_strategy.md`
 
-You can render Mermaid directly in GitHub Markdown.
-
-Example view:
-
 ```mermaid
-graph TD
-    subgraph External_World
-        News[News APIs]
-        Twitter[Twitter/X]
-        Chain[Base/ETH Blockchain]
-        VectorDB[Weaviate Memory]
-    end
+graph TB
 
-    subgraph MCP_Layer
-        MCP_Twitter[mcp-server-twitter]
-        MCP_News[mcp-server-news]
-        MCP_Coinbase[mcp-server-coinbase]
-        MCP_Memory[mcp-server-weaviate]
-    end
+  %% Actors
+  Operator["Network Operator"]
+  Reviewer["HITL Moderator"]
 
-    subgraph Agent_Orchestrator
-        Planner[Planner Agent]
-        TaskQueue[Redis Task Queue]
-        WorkerPool[Worker Swarm]
-        ReviewQueue[Redis Review Queue]
-        Judge[Judge Agent]
-        GlobalState[PostgreSQL / Global State]
-    end
+  %% -------------------------
+  %% Control Plane
+  %% -------------------------
+  subgraph CONTROL["Control Plane"]
+    UI["Dashboard UI (React)"]
+    ORCH["Orchestrator API"]
+    AUTH["Auth & RBAC (OIDC)"]
+    POLICY["Policy Engine (Brand, Safety, Compliance)"]
+    BUDGET["Budget Governor (FinOps Limits)"]
+  end
 
-    subgraph Human_Governance
-        HITL[Human Review Dashboard]
-    end
+  %% -------------------------
+  %% Execution Plane (Swarm)
+  %% -------------------------
+  subgraph EXEC["Execution Plane (FastRender Swarm)"]
+    PLANNER["Planner Service<br/>Goal -> Task DAG"]
+    FILTER["Semantic Filter<br/>Relevance + Sensitivity Classifier"]
+    WORKERS["Worker Pool<br/>Java 21 Virtual Threads"]
+    JUDGE["Judge Service<br/>Quality Gate + OCC Commit"]
+    CFO["CFO Judge<br/>Transaction Guardrails"]
+    HITLROUTER["HITL Router<br/>Confidence-tier Routing"]
+  end
 
-    External_World --> MCP_Layer
-    MCP_Layer --> Planner
+  %% -------------------------
+  %% Integration Plane (MCP)
+  %% -------------------------
+  subgraph INTEG["Integration Plane (MCP)"]
+    MCPGW["MCP Client Gateway"]
+    MCPSOC["MCP Server: Social Platforms"]
+    MCPMEDIA["MCP Server: Media Generation"]
+    MCPMEM["MCP Server: Memory (Weaviate)"]
+    MCPCOMM["MCP Server: Coinbase AgentKit Bridge"]
+  end
 
-    Planner --> TaskQueue
-    TaskQueue --> WorkerPool
-    WorkerPool --> ReviewQueue
-    ReviewQueue --> Judge
-    
-    Judge -- Reject/Retry --> Planner
-    Judge -- Low Confidence --> HITL
-    Judge -- Approve --> GlobalState
-    GlobalState --> Planner
+  %% -------------------------
+  %% Data Plane
+  %% -------------------------
+  subgraph DATA["Data Plane"]
+    PG["PostgreSQL<br/>GlobalState + Tenancy + Campaign Logs"]
+    WEAV["Weaviate<br/>Long-term Semantic Memory"]
+    REDIS["Redis<br/>Episodic Cache + Queues + Spend Counters"]
+    KAFKA["Event Backbone (Kafka)"]
+    OBJ["Object Storage<br/>Media Artifacts"]
+    AUDIT["Append-only Audit Log<br/>Tool Calls + Decisions + Txns"]
+    PERSONA["Persona Repo (SOUL.md GitOps)"]
+  end
+
+  %% -------------------------
+  %% Platform / Infra (Enterprise add-ons)
+  %% -------------------------
+  subgraph PLATFORM["Platform / Infra"]
+    VAULT["Secrets Manager (Vault / AWS Secrets)"]
+    LLM["LLM Providers<br/>Gemini / Claude"]
+    OTEL["OpenTelemetry<br/>Logs/Metrics/Traces"]
+  end
+
+  %% Control plane flows
+  Operator --> UI
+  Reviewer --> UI
+  UI --> ORCH
+  ORCH --> AUTH
+  ORCH --> POLICY
+  ORCH --> BUDGET
+  ORCH --> PLANNER
+
+  %% Swarm + eventing
+  PLANNER --> FILTER
+  FILTER -->|"Create tasks"| KAFKA
+  KAFKA -->|"Dispatch tasks"| WORKERS
+  WORKERS -->|"Publish results"| KAFKA
+  KAFKA -->|"Results for review"| JUDGE
+
+  %% RAG context + persona
+  WORKERS --> REDIS
+  WORKERS --> WEAV
+  WORKERS --> PERSONA
+
+  %% LLM usage
+  PLANNER --> LLM
+  FILTER --> LLM
+  WORKERS --> LLM
+  JUDGE --> LLM
+
+  %% MCP boundary (all external actions via MCP)
+  WORKERS <--> MCPGW
+  CFO <--> MCPGW
+  MCPGW <--> MCPSOC
+  MCPGW <--> MCPMEDIA
+  MCPGW <--> MCPMEM
+  MCPGW <--> MCPCOMM
+
+  %% OCC + state commit
+  JUDGE -->|"OCC commit (state_version check)"| PG
+
+  %% HITL routing
+  JUDGE --> HITLROUTER
+  HITLROUTER -->|"High confidence"| ORCH
+  HITLROUTER -->|"Medium confidence (async approve)"| UI
+  HITLROUTER -->|"Low confidence or sensitive"| UI
+
+  %% Agentic commerce guardrails
+  JUDGE -->|"If txn task"| CFO
+  CFO --> BUDGET
+  CFO --> REDIS
+  CFO --> VAULT
+  CFO -->|"Approved (call AgentKit via MCP)"| MCPGW
+
+  %% Artifacts + audit
+  WORKERS --> OBJ
+  PLANNER --> AUDIT
+  WORKERS --> AUDIT
+  JUDGE --> AUDIT
+  CFO --> AUDIT
+  ORCH --> AUDIT
+
+  %% Observability
+  ORCH --> OTEL
+  PLANNER --> OTEL
+  FILTER --> OTEL
+  WORKERS --> OTEL
+  JUDGE --> OTEL
+  CFO --> OTEL
+  MCPGW --> OTEL
 ```
 
 ---
-
+## Detailed Archtecture
 ## How to Run (Local)
 
 ### Prerequisites
 - Java **21+**
 - Maven **3.9+**
-- (Optional) Docker
+- Docker
 
 ### Verify Java & Maven
 ```bash
