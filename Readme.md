@@ -44,7 +44,7 @@ This repo addresses that by enforcing:
 
 ## What’s Delivered
 
-### Day 1 Deliverables (Specs + Architecture)
+### Specs + Architecture
 - **Executable specs** in `specs/`:
   - `_meta.md` — vision, constraints, directives
   - `functional.md` — user stories and behaviors
@@ -52,7 +52,7 @@ This repo addresses that by enforcing:
   - `openclaw_integration.md` — bonus spec for agent social networking
 - **Architecture strategy** (domain architecture + diagrams) in `research/architecture_strategy.md`
 
-### Day 2 Deliverables (Context + Tooling + TDD + Governance)
+### Context + Tooling + TDD + Governance
 - **Context Engineering rules**: `.cursor/rules` and/or `CLAUDE.md`
 - **Tooling/skills strategy**: `research/tooling_strategy.md`
 - **Runtime skill contracts**: `skills/*`
@@ -63,7 +63,6 @@ This repo addresses that by enforcing:
 - **Bonus**:
   - `Dockerfile` + `make docker-test`
   - `scripts/spec-check.sh` + `make spec-check`
-
 ---
 
 ## Architecture Overview
@@ -77,9 +76,6 @@ This repo addresses that by enforcing:
 - **CFO Judge (Beyond SRS):** financial safety gate for commerce actions
 
 ### Detailed Archtecture
-
-> The architecture diagram is defined in Mermaid inside:
-- `research/architecture_strategy.md`
 
 ```mermaid
 graph TB
@@ -214,7 +210,6 @@ graph TB
 ```
 
 ---
-## Detailed Archtecture
 ## How to Run (Local)
 
 ### Prerequisites
@@ -257,7 +252,7 @@ Expected: **tests fail** deterministically (red stage).
 
 ## Governance & Spec Alignment
 
-### Spec-check (bonus governance)
+### Spec-check 
 This script verifies:
 - required specs exist
 - rules file contains required directives
@@ -344,12 +339,14 @@ CLAUDE.md
 
 ---
 
-## Notes / Assumptions
+## Notes: The Right Tool for the Job
 
 - External APIs are accessed only through MCP servers (social, memory, commerce, media).
-- Redis is used for high-speed queues and episodic cache in the architecture.
-- PostgreSQL is the authority for committed global state (OCC) and audit/ledger metadata.
-- This repo is a **governed scaffold** rather than a production deployment.
+- **PostgreSQL:** For structured, transactional data: tenant info, campaign state, audit logs. ACID compliance is key here.
+- **Weaviate:** For long-term, semantic memory. It allows agents to perform RAG and recall context from months ago.
+- **Redis:** For high-velocity, ephemeral data: task queues, short-term conversational cache, and real-time spend counters.
+- **Kafka:** For a durable, replayable event backbone. Guarantees no tasks are lost, even if a service goes down.
+- **MCP:** To create an anti-fragile system. If Twitter's API changes, we only update the mcp-server-twitter, not our core agent logic.
 
 ---
 
