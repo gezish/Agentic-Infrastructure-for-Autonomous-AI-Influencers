@@ -77,7 +77,9 @@ This repo addresses that by enforcing:
 
 ### Detailed Archtecture
 
+
 ```mermaid
+
 graph TB
 
   %% Actors
